@@ -83,35 +83,32 @@ namespace SAMPServerAnnouncer
                                 }
                                 if (announcer.IsValid)
                                 {
-                                    try
+                                    if ((announcer.API == EAnnouncerAPI.SAMPServersAPI) && (ipv4_address == null))
                                     {
-                                        if ((announcer.API == EAnnouncerAPI.SAMPServersAPI) && (ipv4_address == null))
+                                        ipv4_address = config.IPv4Address;
+                                        if (ipv4_address.Length <= 0)
                                         {
-                                            ipv4_address = config.IPv4Address;
-                                            if (ipv4_address.Length <= 0)
+                                            foreach (string ipv4_service_uri in config.IPv4ServiceURIs)
                                             {
-                                                foreach (string ipv4_service_uri in config.IPv4ServiceURIs)
+                                                if (!(string.IsNullOrWhiteSpace(ipv4_service_uri)))
                                                 {
-                                                    if (!(string.IsNullOrWhiteSpace(ipv4_service_uri)))
+                                                    Uri uri = new Uri(ipv4_service_uri.Trim());
+                                                    HttpWebRequest ipv4_address_http_web_request = WebRequest.CreateHttp(uri);
+                                                    if (ipv4_address_http_web_request != null)
                                                     {
-                                                        Uri uri = new Uri(ipv4_service_uri.Trim());
-                                                        HttpWebRequest ipv4_address_http_web_request = WebRequest.CreateHttp(uri);
-                                                        if (ipv4_address_http_web_request != null)
+                                                        ipv4_address_http_web_request.Accept = "*/*";
+                                                        ipv4_address_http_web_request.UserAgent = config.UserAgent;
+                                                        ipv4_address_http_web_request.Host = uri.Host;
+                                                        using (HttpWebResponse response = ipv4_address_http_web_request.GetResponse() as HttpWebResponse)
                                                         {
-                                                            ipv4_address_http_web_request.Headers.Add(HttpRequestHeader.Accept, "*/*");
-                                                            ipv4_address_http_web_request.Headers.Add(HttpRequestHeader.UserAgent, config.UserAgent);
-                                                            ipv4_address_http_web_request.Headers.Add(HttpRequestHeader.Host, uri.Host);
-                                                            using (HttpWebResponse response = ipv4_address_http_web_request.GetResponse() as HttpWebResponse)
-                                                            {
 
-                                                                if (response.StatusCode == HttpStatusCode.OK)
+                                                            if (response.StatusCode == HttpStatusCode.OK)
+                                                            {
+                                                                using (Stream response_stream = response.GetResponseStream())
                                                                 {
-                                                                    using (Stream response_stream = response.GetResponseStream())
+                                                                    using (StreamReader response_reader = new StreamReader(response_stream))
                                                                     {
-                                                                        using (StreamReader response_reader = new StreamReader(response_stream))
-                                                                        {
-                                                                            ipv4_address = response_reader.ReadToEnd().Trim();
-                                                                        }
+                                                                        ipv4_address = response_reader.ReadToEnd().Trim();
                                                                     }
                                                                 }
                                                             }
@@ -120,10 +117,6 @@ namespace SAMPServerAnnouncer
                                                 }
                                             }
                                         }
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        Console.Error.WriteLine(e);
                                     }
                                     if ((announcer.API != EAnnouncerAPI.SAMPServersAPI) || (ipv4_address != null))
                                     {

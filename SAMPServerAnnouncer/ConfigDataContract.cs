@@ -63,7 +63,7 @@ namespace SAMPServerAnnouncer
             {
                 if (announcers == null)
                 {
-                    announcers = Array.Empty<AnnouncereDataContract>();
+                    announcers = new AnnouncereDataContract[0];
                 }
                 return announcers;
             }
@@ -113,7 +113,7 @@ namespace SAMPServerAnnouncer
             {
                 if (ipv4ServiceURIs == null)
                 {
-                    ipv4ServiceURIs = Array.Empty<string>();
+                    ipv4ServiceURIs = new string[0];
                 }
                 return ipv4ServiceURIs;
             }

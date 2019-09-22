@@ -238,19 +238,12 @@ namespace SAMPServerAnnouncer
         /// <param name="isError">Is error</param>
         private void Log(object message, bool isError)
         {
-            try
+            (isError ? Console.Error : Console.Out)?.WriteLine(message);
+            string path = (isError ? ErrorLogPath : LogPath);
+            string message_string = ((message == null) ? string.Empty : message.ToString());
+            if ((!(string.IsNullOrWhiteSpace(path))) && (message_string.Length > 0))
             {
-                (isError ? Console.Error : Console.Out)?.WriteLine(message);
-                string path = (isError ? ErrorLogPath : LogPath);
-                string message_string = ((message == null) ? string.Empty : message.ToString());
-                if ((!(string.IsNullOrWhiteSpace(path))) && (message_string.Length > 0))
-                {
-                    File.AppendAllText(path, message_string + Environment.NewLine, Encoding.UTF8);
-                }
-            }
-            catch (Exception e)
-            {
-                Console.Error.WriteLine(e);
+                File.AppendAllText(path, message_string + Environment.NewLine, Encoding.UTF8);
             }
         }
 
@@ -263,155 +256,148 @@ namespace SAMPServerAnnouncer
             Task<HttpStatusCode> ret = new Task<HttpStatusCode>(() =>
             {
                 HttpStatusCode r = HttpStatusCode.BadRequest;
-                try
+                if ((Port != 0) && (!(string.IsNullOrWhiteSpace(Host))))
                 {
-                    if ((Port != 0) && (!(string.IsNullOrWhiteSpace(Host))))
+                    StringBuilder uri_builder = null;
+                    switch (API)
                     {
-                        StringBuilder uri_builder = null;
-                        switch (API)
-                        {
-                            case EAnnouncerAPI.Legacy:
-                                if (!(string.IsNullOrWhiteSpace(Version)))
-                                {
-                                    uri_builder = new StringBuilder();
-                                    uri_builder.Append(UseHTTPS ? "https://" : "http://");
-                                    uri_builder.Append(Host);
-                                    uri_builder.Append("/");
-                                    uri_builder.Append(Version);
-                                    uri_builder.Append("/announce/");
-                                    uri_builder.Append(Port.ToString());
-                                }
-                                break;
-                            case EAnnouncerAPI.SAMPServersAPI:
-                                if (!(string.IsNullOrWhiteSpace(IPv4Address)))
-                                {
-                                    uri_builder = new StringBuilder();
-                                    uri_builder.Append(UseHTTPS ? "https://" : "http://");
-                                    uri_builder.Append(Host);
-                                    uri_builder.Append("/v2/server");
-                                }
-                                break;
-                        }
-                        if (uri_builder != null)
-                        {
-                            HttpWebRequest http_web_request = WebRequest.CreateHttp(uri_builder.ToString());
-                            if (http_web_request != null)
+                        case EAnnouncerAPI.Legacy:
+                            if (!(string.IsNullOrWhiteSpace(Version)))
                             {
-                                Log("Requesting with method \"" + Method + "\" at \"" + http_web_request.Address + "\" with API \"" + API + "\"...", false);
-                                http_web_request.AllowAutoRedirect = false;
-                                http_web_request.Headers.Add(HttpRequestHeader.Host, Host);
-                                if (!(string.IsNullOrWhiteSpace(UserAgent)))
-                                {
-                                    http_web_request.UserAgent = UserAgent;
-                                }
-                                if (!(string.IsNullOrWhiteSpace(Referer)))
-                                {
-                                    http_web_request.Referer = Referer;
-                                }
-                                http_web_request.Accept = "*/*";
-                                http_web_request.Method = Method;
-                                if (API == EAnnouncerAPI.SAMPServersAPI)
-                                {
-                                    http_web_request.ContentType = ((CustomServerInfo == null) ? "application/x-www-form-urlencoded" : "application/json");
-                                    //                                    using (MemoryStream request_memory_stream = new MemoryStream())
-                                    //                                    {
-                                    //                                        if (CustomServerInfo == null)
-                                    //                                        {
-                                    //                                            StreamWriter request_memory_writer = new StreamWriter(request_memory_stream);
-                                    //                                            request_memory_writer.Write("address=");
-                                    //                                            request_memory_writer.Write(IPv4Address);
-                                    //                                            request_memory_writer.Write(":");
-                                    //                                            request_memory_writer.Write(Port);
-                                    //                                            request_memory_writer.Flush();
-                                    //                                        }
-                                    //                                        else
-                                    //                                        {
-                                    //                                            serializer.WriteObject(request_memory_stream, CustomServerInfo);
-                                    //                                        }
-                                    //                                        request_memory_stream.Seek(0L, SeekOrigin.Begin);
-                                    //                                        http_web_request.ContentLength = request_memory_stream.Length;
-                                    //                                        using (Stream request_stream = http_web_request.GetRequestStream())
-                                    //                                        {
-                                    //                                            if (request_stream != null)
-                                    //                                            {
-                                    //                                                request_memory_stream.CopyTo(request_stream);
-                                    //                                            }
-                                    //                                        }
-                                    //#if DEBUG
-                                    //                                        Log(http_web_request.Method + " " + http_web_request.RequestUri.LocalPath + " HTTP/" + http_web_request.ProtocolVersion, false);
-                                    //                                        Log(Encoding.UTF8.GetString(http_web_request.Headers.ToByteArray()), false);
-                                    //                                        request_memory_stream.Seek(0L, SeekOrigin.Begin);
-                                    //                                        Log((new StreamReader(request_memory_stream)).ReadToEnd(), false);
-                                    //#endif
-                                    //                                    }
+                                uri_builder = new StringBuilder();
+                                uri_builder.Append(UseHTTPS ? "https://" : "http://");
+                                uri_builder.Append(Host);
+                                uri_builder.Append("/");
+                                uri_builder.Append(Version);
+                                uri_builder.Append("/announce/");
+                                uri_builder.Append(Port.ToString());
+                            }
+                            break;
+                        case EAnnouncerAPI.SAMPServersAPI:
+                            if (!(string.IsNullOrWhiteSpace(IPv4Address)))
+                            {
+                                uri_builder = new StringBuilder();
+                                uri_builder.Append(UseHTTPS ? "https://" : "http://");
+                                uri_builder.Append(Host);
+                                uri_builder.Append("/v2/server");
+                            }
+                            break;
+                    }
+                    if (uri_builder != null)
+                    {
+                        HttpWebRequest http_web_request = WebRequest.CreateHttp(uri_builder.ToString());
+                        if (http_web_request != null)
+                        {
+                            Log("Requesting with method \"" + Method + "\" at \"" + http_web_request.Address + "\" with API \"" + API + "\"...", false);
+                            http_web_request.AllowAutoRedirect = false;
+                            http_web_request.Host = Host;
+                            if (!(string.IsNullOrWhiteSpace(UserAgent)))
+                            {
+                                http_web_request.UserAgent = UserAgent;
+                            }
+                            if (!(string.IsNullOrWhiteSpace(Referer)))
+                            {
+                                http_web_request.Referer = Referer;
+                            }
+                            http_web_request.Accept = "*/*";
+                            http_web_request.Method = Method;
+                            if (API == EAnnouncerAPI.SAMPServersAPI)
+                            {
+                                http_web_request.ContentType = ((CustomServerInfo == null) ? "application/x-www-form-urlencoded" : "application/json");
+                                //                                    using (MemoryStream request_memory_stream = new MemoryStream())
+                                //                                    {
+                                //                                        if (CustomServerInfo == null)
+                                //                                        {
+                                //                                            StreamWriter request_memory_writer = new StreamWriter(request_memory_stream);
+                                //                                            request_memory_writer.Write("address=");
+                                //                                            request_memory_writer.Write(IPv4Address);
+                                //                                            request_memory_writer.Write(":");
+                                //                                            request_memory_writer.Write(Port);
+                                //                                            request_memory_writer.Flush();
+                                //                                        }
+                                //                                        else
+                                //                                        {
+                                //                                            serializer.WriteObject(request_memory_stream, CustomServerInfo);
+                                //                                        }
+                                //                                        request_memory_stream.Seek(0L, SeekOrigin.Begin);
+                                //                                        http_web_request.ContentLength = request_memory_stream.Length;
+                                //                                        using (Stream request_stream = http_web_request.GetRequestStream())
+                                //                                        {
+                                //                                            if (request_stream != null)
+                                //                                            {
+                                //                                                request_memory_stream.CopyTo(request_stream);
+                                //                                            }
+                                //                                        }
+                                //#if DEBUG
+                                //                                        Log(http_web_request.Method + " " + http_web_request.RequestUri.LocalPath + " HTTP/" + http_web_request.ProtocolVersion, false);
+                                //                                        Log(Encoding.UTF8.GetString(http_web_request.Headers.ToByteArray()), false);
+                                //                                        request_memory_stream.Seek(0L, SeekOrigin.Begin);
+                                //                                        Log((new StreamReader(request_memory_stream)).ReadToEnd(), false);
+                                //#endif
+                                //                                    }
 
-                                    using (Stream request_stream = http_web_request.GetRequestStream())
-                                    {
-                                        if (CustomServerInfo == null)
-                                        {
-                                            StreamWriter request_memory_writer = new StreamWriter(request_stream);
-                                            request_memory_writer.Write("address=");
-                                            request_memory_writer.Write(IPv4Address);
-                                            request_memory_writer.Write(":");
-                                            request_memory_writer.Write(Port);
-                                            request_memory_writer.Flush();
-                                        }
-                                        else
-                                        {
-                                            serializer.WriteObject(request_stream, CustomServerInfo);
-                                        }
-                                    }
-                                }
-                                try
+                                using (Stream request_stream = http_web_request.GetRequestStream())
                                 {
-                                    using (HttpWebResponse response = http_web_request.GetResponse() as HttpWebResponse)
+                                    if (CustomServerInfo == null)
                                     {
-                                        r = response.StatusCode;
-                                        Log("\"" + http_web_request.Address + "\" responded with \"" + r + "\"", false);
-#if DEBUG
-                                        using (Stream response_stream = response.GetResponseStream())
-                                        {
-                                            using (StreamReader response_reader = new StreamReader(response_stream))
-                                            {
-                                                Log(response_reader.ReadToEnd(), false);
-                                            }
-                                        }
-#endif
-                                    }
-                                }
-                                catch (WebException e)
-                                {
-                                    HttpWebResponse response = e.Response as HttpWebResponse;
-                                    if (response != null)
-                                    {
-                                        r = response.StatusCode;
-                                        if (r != HttpStatusCode.Found)
-                                        {
-                                            Log(e, true);
-                                        }
-                                        Log("\"" + http_web_request.Address + "\" responded with \"" + r + "\"", (r != HttpStatusCode.Redirect));
-#if DEBUG
-                                        using (Stream response_stream = response.GetResponseStream())
-                                        {
-                                            using (StreamReader response_reader = new StreamReader(response_stream))
-                                            {
-                                                Log(response_reader.ReadToEnd(), true);
-                                            }
-                                        }
-#endif
+                                        StreamWriter request_memory_writer = new StreamWriter(request_stream);
+                                        request_memory_writer.Write("address=");
+                                        request_memory_writer.Write(IPv4Address);
+                                        request_memory_writer.Write(":");
+                                        request_memory_writer.Write(Port);
+                                        request_memory_writer.Flush();
                                     }
                                     else
                                     {
+                                        serializer.WriteObject(request_stream, CustomServerInfo);
+                                    }
+                                }
+                            }
+                            try
+                            {
+                                using (HttpWebResponse response = http_web_request.GetResponse() as HttpWebResponse)
+                                {
+                                    r = response.StatusCode;
+                                    Log("\"" + http_web_request.Address + "\" responded with \"" + r + "\"", false);
+#if DEBUG
+                                    using (Stream response_stream = response.GetResponseStream())
+                                    {
+                                        using (StreamReader response_reader = new StreamReader(response_stream))
+                                        {
+                                            Log(response_reader.ReadToEnd(), false);
+                                        }
+                                    }
+#endif
+                                }
+                            }
+                            catch (WebException e)
+                            {
+                                HttpWebResponse response = e.Response as HttpWebResponse;
+                                if (response != null)
+                                {
+                                    r = response.StatusCode;
+                                    if (r != HttpStatusCode.Found)
+                                    {
                                         Log(e, true);
                                     }
+                                    Log("\"" + http_web_request.Address + "\" responded with \"" + r + "\"", (r != HttpStatusCode.Redirect));
+#if DEBUG
+                                    using (Stream response_stream = response.GetResponseStream())
+                                    {
+                                        using (StreamReader response_reader = new StreamReader(response_stream))
+                                        {
+                                            Log(response_reader.ReadToEnd(), true);
+                                        }
+                                    }
+#endif
+                                }
+                                else
+                                {
+                                    Log(e, true);
                                 }
                             }
                         }
                     }
-                }
-                catch (Exception e)
-                {
-                    Log(e, true);
                 }
                 return r;
             });

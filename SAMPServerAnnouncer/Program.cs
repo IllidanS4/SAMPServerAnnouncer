@@ -1,4 +1,7 @@
-﻿/// <summary>
+﻿using System.Globalization;
+using System.Net;
+using System.Threading;
+/// <summary>
 /// San Andreas Multiplayer server announcer namespace
 /// </summary>
 namespace SAMPServerAnnouncer
@@ -14,6 +17,9 @@ namespace SAMPServerAnnouncer
         /// <param name="args">Command line arguments</param>
         internal static void Main(string[] args)
         {
+            ServicePointManager.Expect100Continue = true;
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+
             if (args.Length >= 1)
             {
                 ushort default_port;
