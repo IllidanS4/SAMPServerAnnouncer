@@ -18,8 +18,8 @@ namespace SAMPServerAnnouncer
         /// <summary>
         /// Serializer
         /// </summary>
-        private static readonly DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(ConfigDataContract), new DataContractJsonSerializerSettings { UseSimpleDictionaryFormat = true });
-
+        private static readonly DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(ConfigDataContract), new DataContractJsonSerializerSettings { UseSimpleDictionaryFormat = true, RootName = "root", MaxItemsInObjectGraph = Int32.MaxValue });
+        
         /// <summary>
         /// Announcer clients
         /// </summary>
@@ -93,7 +93,7 @@ namespace SAMPServerAnnouncer
                                                 if (!(string.IsNullOrWhiteSpace(ipv4_service_uri)))
                                                 {
                                                     Uri uri = new Uri(ipv4_service_uri.Trim());
-                                                    HttpWebRequest ipv4_address_http_web_request = WebRequest.CreateHttp(uri);
+                                                    HttpWebRequest ipv4_address_http_web_request = (HttpWebRequest)WebRequest.Create(uri);
                                                     if (ipv4_address_http_web_request != null)
                                                     {
                                                         ipv4_address_http_web_request.Accept = "*/*";

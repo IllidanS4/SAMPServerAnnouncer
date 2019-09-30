@@ -18,7 +18,7 @@ namespace SAMPServerAnnouncer
         /// <summary>
         /// Serializer
         /// </summary>
-        private static readonly DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(SAMPServersAPIRequestDataContract), new DataContractJsonSerializerSettings { UseSimpleDictionaryFormat = true });
+        private static readonly DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(SAMPServersAPIRequestDataContract), new DataContractJsonSerializerSettings { UseSimpleDictionaryFormat = true, RootName = "root", MaxItemsInObjectGraph = Int32.MaxValue });
 
         /// <summary>
         /// Error log path
@@ -285,7 +285,7 @@ namespace SAMPServerAnnouncer
                     }
                     if (uri_builder != null)
                     {
-                        HttpWebRequest http_web_request = WebRequest.CreateHttp(uri_builder.ToString());
+                        HttpWebRequest http_web_request = (HttpWebRequest)WebRequest.Create(uri_builder.ToString());
                         if (http_web_request != null)
                         {
                             Log("Requesting with method \"" + Method + "\" at \"" + http_web_request.Address + "\" with API \"" + API + "\"...", false);
